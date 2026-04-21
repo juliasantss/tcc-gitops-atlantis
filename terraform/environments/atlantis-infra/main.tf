@@ -193,8 +193,8 @@ resource "aws_iam_role_policy" "task_policy" {
         Resource = aws_secretsmanager_secret.atlantis.arn
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "ec2:*",
           "vpc:*",
           "autoscaling:*",
