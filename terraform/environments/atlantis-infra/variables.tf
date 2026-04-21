@@ -30,11 +30,11 @@ variable "availability_zones" {
   default     = ["us-east-1a", "us-east-1b"]
 }
 
-variable "acm_certificate_arn" {
-  description = "ARN of ACM certificate for HTTPS (leave empty to use HTTP only)"
-  type        = string
-  default     = ""
-}
+# variable "acm_certificate_arn" {
+#   description = "ARN of ACM certificate for HTTPS (leave empty to use HTTP only)"
+#   type        = string
+#   default     = ""
+# }
 
 variable "github_user" {
   description = "GitHub username or organization"

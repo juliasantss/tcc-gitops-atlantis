@@ -89,7 +89,10 @@ resource "aws_lb" "atlantis" {
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = module.networking.public_subnet_ids
 
-  tags = { Name = "atlantis-alb" }
+  tags = {
+  Name = "atlantis-alb"
+  Test = "gitops-validation"
+}
 }
 
 resource "aws_lb_target_group" "atlantis" {
