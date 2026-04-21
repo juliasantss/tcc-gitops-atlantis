@@ -169,7 +169,7 @@ resource "aws_iam_role_policy" "task_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # Permissões para S3 (state)
+      # S3 (state)
       {
         Effect = "Allow"
         Action = [
@@ -182,7 +182,7 @@ resource "aws_iam_role_policy" "task_policy" {
           "arn:aws:s3:::tcc-tfstate-*/*"
         ]
       },
-      # Permissões para DynamoDB (locking)
+      # DynamoDB (locking)
       {
         Effect = "Allow"
         Action = [
@@ -192,24 +192,42 @@ resource "aws_iam_role_policy" "task_policy" {
         ]
         Resource = "arn:aws:dynamodb:*:*:table/terraform-locks"
       },
-      # Permissão para ler segredos (já existia)
+      # Secrets Manager
       {
-        Effect   = "Allow"
-        Action   = "secretsmanager:GetSecretValue"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecrets",
+          "secretsmanager:GetResourcePolicy"
+        ]
         Resource = aws_secretsmanager_secret.atlantis.arn
       },
-      # Permissões para gerenciar infraestrutura (já existia)
+      # CloudWatch Logs
       {
-        Effect   = "Allow"
-        Action   = [
-          "ec2:*",
-          "vpc:*",
-          "autoscaling:*",
-          "elasticloadbalancing:*"
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups",
+          "logs:ListTagsLogGroup"
         ]
-        Resource = "*"
+        Resource = aws_cloudwatch_log_group.atlantis.arn
       },
-      # NOVAS PERMISSÕES: leitura de recursos administrativos para refresh do Terraform
+      # IAM Roles (leitura)
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:GetRole",
+          "iam:ListRoles",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies"
+        ]
+        Resource = [
+          aws_iam_role.execution_role.arn,
+          aws_iam_role.task_role.arn
+        ]
+      },
+      # ECS (leitura)
       {
         Effect = "Allow"
         Action = [
@@ -218,34 +236,16 @@ resource "aws_iam_role_policy" "task_policy" {
         ]
         Resource = "*"
       },
+      # Permissões para provisionar recursos (EC2, VPC, etc.)
       {
         Effect = "Allow"
         Action = [
-          "iam:GetRole",
-          "iam:ListRoles",
-          "iam:GetRolePolicy",
-          "iam:ListRolePolicies"
+          "ec2:*",
+          "vpc:*",
+          "autoscaling:*",
+          "elasticloadbalancing:*"
         ]
-        Resource = [
-          aws_iam_role.execution_role.arn,
-          aws_iam_role.task_role.arn
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:DescribeSecret",
-          "secretsmanager:ListSecrets"
-        ]
-        Resource = aws_secretsmanager_secret.atlantis.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:DescribeLogGroups",
-          "logs:ListTagsLogGroup"
-        ]
-        Resource = aws_cloudwatch_log_group.atlantis.arn
+        Resource = "*"
       }
     ]
   })
