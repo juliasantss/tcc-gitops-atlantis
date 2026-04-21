@@ -208,9 +208,11 @@ resource "aws_iam_role_policy" "task_policy" {
         Effect = "Allow"
         Action = [
           "logs:DescribeLogGroups",
-          "logs:ListTagsLogGroup"
+          "logs:ListTagsLogGroup",
+          "logs:CreateLogGroup",
+          "logs:PutRetentionPolicy"
         ]
-        Resource = aws_cloudwatch_log_group.atlantis.arn
+        Resource = "arn:aws:logs:us-east-1:775615219077:log-group:*"
       },
       # IAM Roles (leitura)
       {
@@ -295,7 +297,8 @@ resource "aws_ecs_task_definition" "atlantis" {
       { name = "ATLANTIS_LOG_LEVEL", value = "debug" },
       { name = "ATLANTIS_URL", value = "http://${aws_lb.atlantis.dns_name}" },
       { name = "TF_VAR_github_user", value = var.github_user },        
-      { name = "TF_VAR_github_token", value = var.github_token } 
+      { name = "TF_VAR_github_token", value = var.github_token },
+      { name = "ATLANTIS_TERRAFORM_VERSION", value = "1.11.4" }
     ]
     secrets = [
       { name = "ATLANTIS_GH_TOKEN", valueFrom = "${aws_secretsmanager_secret.atlantis.arn}:token::" }
