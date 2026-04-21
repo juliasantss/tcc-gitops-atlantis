@@ -169,26 +169,28 @@ resource "aws_iam_role_policy" "task_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # S3 (state)
+      # S3
       {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:DeleteObject"
         ]
         Resource = [
           "arn:aws:s3:::tcc-tfstate-*",
           "arn:aws:s3:::tcc-tfstate-*/*"
         ]
       },
-      # DynamoDB (locking)
+      # DynamoDB
       {
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable"
         ]
         Resource = "arn:aws:dynamodb:*:*:table/terraform-locks"
       },
@@ -199,18 +201,24 @@ resource "aws_iam_role_policy" "task_policy" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret",
           "secretsmanager:ListSecrets",
-          "secretsmanager:GetResourcePolicy"
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecret"
         ]
         Resource = aws_secretsmanager_secret.atlantis.arn
       },
-      # CloudWatch Logs
+      # CloudWatch Logs – permissão total para todos os log groups
       {
         Effect = "Allow"
         Action = [
           "logs:DescribeLogGroups",
           "logs:ListTagsLogGroup",
           "logs:CreateLogGroup",
-          "logs:PutRetentionPolicy"
+          "logs:PutRetentionPolicy",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents",
+          "logs:GetLogEvents"
         ]
         Resource = "arn:aws:logs:us-east-1:775615219077:log-group:*"
       },
@@ -234,11 +242,13 @@ resource "aws_iam_role_policy" "task_policy" {
         Effect = "Allow"
         Action = [
           "ecs:DescribeClusters",
-          "ecs:ListClusters"
+          "ecs:ListClusters",
+          "ecs:DescribeServices",
+          "ecs:ListServices"
         ]
         Resource = "*"
       },
-      # Permissões para provisionar recursos (EC2, VPC, etc.)
+      # Permissões para provisionar recursos (infraestrutura alvo)
       {
         Effect = "Allow"
         Action = [
