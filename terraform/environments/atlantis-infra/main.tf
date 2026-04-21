@@ -169,6 +169,7 @@ resource "aws_iam_role_policy" "task_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # Permissões para S3 (state)
       {
         Effect = "Allow"
         Action = [
@@ -181,6 +182,7 @@ resource "aws_iam_role_policy" "task_policy" {
           "arn:aws:s3:::tcc-tfstate-*/*"
         ]
       },
+      # Permissões para DynamoDB (locking)
       {
         Effect = "Allow"
         Action = [
@@ -190,20 +192,60 @@ resource "aws_iam_role_policy" "task_policy" {
         ]
         Resource = "arn:aws:dynamodb:*:*:table/terraform-locks"
       },
+      # Permissão para ler segredos (já existia)
       {
         Effect   = "Allow"
         Action   = "secretsmanager:GetSecretValue"
         Resource = aws_secretsmanager_secret.atlantis.arn
       },
+      # Permissões para gerenciar infraestrutura (já existia)
       {
-        Effect = "Allow"
-        Action = [
+        Effect   = "Allow"
+        Action   = [
           "ec2:*",
           "vpc:*",
           "autoscaling:*",
           "elasticloadbalancing:*"
         ]
         Resource = "*"
+      },
+      # NOVAS PERMISSÕES: leitura de recursos administrativos para refresh do Terraform
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeClusters",
+          "ecs:ListClusters"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:GetRole",
+          "iam:ListRoles",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies"
+        ]
+        Resource = [
+          aws_iam_role.execution_role.arn,
+          aws_iam_role.task_role.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = aws_secretsmanager_secret.atlantis.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups",
+          "logs:ListTagsLogGroup"
+        ]
+        Resource = aws_cloudwatch_log_group.atlantis.arn
       }
     ]
   })
