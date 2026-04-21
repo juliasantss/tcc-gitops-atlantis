@@ -1,0 +1,6 @@
+# backend-bootstrap/terraform.tfvars.example
+# Copie este arquivo para terraform.tfvars e ajuste os valores.
+
+aws_region          = "us-east-1"
+bucket_name         = "tcc-tfstate-atlantis"
+dynamodb_table_name = "terraform-locks"

@@ -1,0 +1,17 @@
+version: 3
+projects:
+  - name: atlantis-infra
+    dir: terraform/environments/atlantis-infra
+    workflow: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: [mergeable, approved]
+
+  - name: dev
+    dir: terraform/environments/dev
+    workflow: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: [mergeable, approved]

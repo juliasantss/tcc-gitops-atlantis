@@ -1,0 +1,83 @@
+# .github/workflows/terraform-ci.yml
+name: "Terraform CI"
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "terraform/**"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "terraform/**"
+
+jobs:
+  validate:
+    name: "Validate Terraform"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory:
+          - terraform/modules/networking
+          - terraform/modules/compute
+          - terraform/environments/dev
+          - terraform/environments/atlantis-infra
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        working-directory: ${{ matrix.directory }}
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        working-directory: ${{ matrix.directory }}
+        run: terraform validate
+
+  lint:
+    name: "Lint with tflint"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.48.0
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run TFLint
+        run: tflint -f compact --recursive
+
+  security:
+    name: "Security Scan with tfsec"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: false
+          working_directory: terraform/
+
