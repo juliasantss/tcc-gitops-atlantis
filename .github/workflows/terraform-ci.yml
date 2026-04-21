@@ -33,7 +33,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.6.0"
+          terraform_version: "1.11.4"
 
       - name: Terraform Format
         id: fmt
@@ -66,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run TFLint
-        run: tflint -f compact --recursive
+        run: tflint -f compact --recursive --minimum-failure-severity=error
 
   security:
     name: "Security Scan with tfsec"
@@ -80,4 +80,3 @@ jobs:
         with:
           soft_fail: false
           working_directory: terraform/
-
