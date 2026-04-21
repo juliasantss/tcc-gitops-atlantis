@@ -251,7 +251,9 @@ resource "aws_ecs_task_definition" "atlantis" {
       { name = "ATLANTIS_GH_WEBHOOK_SECRET", value = var.github_webhook_secret },
       { name = "ATLANTIS_REPO_ALLOWLIST", value = "github.com/${var.github_user}/tcc-gitops-atlantis" },
       { name = "ATLANTIS_LOG_LEVEL", value = "debug" },
-      { name = "ATLANTIS_URL", value = "http://${aws_lb.atlantis.dns_name}" }
+      { name = "ATLANTIS_URL", value = "http://${aws_lb.atlantis.dns_name}" },
+      { name = "TF_VAR_github_user", value = var.github_user },        
+      { name = "TF_VAR_github_token", value = var.github_token } 
     ]
     secrets = [
       { name = "ATLANTIS_GH_TOKEN", valueFrom = "${aws_secretsmanager_secret.atlantis.arn}:token::" }
