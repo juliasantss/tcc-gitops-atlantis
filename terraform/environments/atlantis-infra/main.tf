@@ -349,6 +349,7 @@ resource "aws_ecs_service" "atlantis" {
 # ============================================
 resource "aws_secretsmanager_secret" "atlantis" {
   name = "atlantis-secrets"
+  recovery_window_in_days = 0   # Força exclusão imediata
 }
 
 resource "aws_secretsmanager_secret_version" "atlantis" {
