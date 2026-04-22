@@ -211,17 +211,10 @@ resource "aws_iam_role_policy" "task_policy" {
       {
         Effect = "Allow"
         Action = [
-          "logs:DescribeLogGroups",
-          "logs:ListTagsLogGroup",
-          "logs:CreateLogGroup",
-          "logs:PutRetentionPolicy",
-          "logs:DeleteLogGroup",
-          "logs:DescribeLogStreams",
-          "logs:PutLogEvents",
-          "logs:GetLogEvents"
+          "logs:*"
         ]
         Resource = "arn:aws:logs:us-east-1:775615219077:log-group:*"
-      },
+},
       # IAM Roles (leitura)
       {
         Effect = "Allow"
@@ -294,7 +287,7 @@ resource "aws_ecs_task_definition" "atlantis" {
 
   container_definitions = jsonencode([{
     name      = "atlantis"
-    image     = "ghcr.io/runatlantis/atlantis:latest"
+    image     = "ghcr.io/runatlantis/atlantis:v0.42.0"
     essential = true
     portMappings = [{
       containerPort = 4141
@@ -306,7 +299,7 @@ resource "aws_ecs_task_definition" "atlantis" {
       { name = "ATLANTIS_REPO_ALLOWLIST", value = "github.com/${var.github_user}/tcc-gitops-atlantis" },
       { name = "ATLANTIS_LOG_LEVEL", value = "debug" },
       { name = "ATLANTIS_URL", value = "http://${aws_lb.atlantis.dns_name}" },
-      { name = "TF_VAR_github_user", value = var.github_user },        
+      { name = "TF_VAR_github_user", value = var.github_user },
       { name = "TF_VAR_github_token", value = var.github_token },
       { name = "ATLANTIS_TERRAFORM_VERSION", value = "1.11.4" }
     ]
