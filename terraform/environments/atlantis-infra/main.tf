@@ -242,18 +242,8 @@ resource "aws_iam_role_policy" "task_policy" {
       },
       # ECS (leitura e escrita)
       {
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeClusters",
-          "ecs:ListClusters",
-          "ecs:DescribeServices",
-          "ecs:ListServices",
-          "ecs:RegisterTaskDefinition",
-          "ecs:DeregisterTaskDefinition",
-          "ecs:UpdateService",
-          "ecs:CreateService",
-          "ecs:DeleteService"
-        ]
+        Effect   = "Allow"
+        Action   = "ecs:*"
         Resource = "*"
       },
       # Permissões para provisionar recursos (infraestrutura alvo)
