@@ -77,9 +77,9 @@ resource "aws_security_group" "atlantis_sg" {
   }
 
   tags = {
-  Name = "atlantis-sg"
-  Test = "validar PR"
-}
+    Name = "atlantis-sg"
+    Test = "validar PR"
+  }
 }
 
 # ============================================
@@ -163,13 +163,14 @@ resource "aws_iam_role" "task_role" {
   })
 }
 
+# Política da Task Role – ATUALIZADA COM PERMISSÕES DE ESCRITA NO ECS E IAM:PASSROLE
 resource "aws_iam_role_policy" "task_policy" {
   name = "atlantis-task-policy"
   role = aws_iam_role.task_role.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # S3
+      # S3 (state)
       {
         Effect = "Allow"
         Action = [
@@ -183,7 +184,7 @@ resource "aws_iam_role_policy" "task_policy" {
           "arn:aws:s3:::tcc-tfstate-*/*"
         ]
       },
-      # DynamoDB
+      # DynamoDB (locking)
       {
         Effect = "Allow"
         Action = [
@@ -207,14 +208,14 @@ resource "aws_iam_role_policy" "task_policy" {
         ]
         Resource = aws_secretsmanager_secret.atlantis.arn
       },
-      # CloudWatch Logs – permissão total para todos os log groups
+      # CloudWatch Logs – permissão total
       {
         Effect = "Allow"
         Action = [
           "logs:*"
         ]
         Resource = "arn:aws:logs:us-east-1:775615219077:log-group:*"
-},
+      },
       # IAM Roles (leitura)
       {
         Effect = "Allow"
@@ -230,14 +231,28 @@ resource "aws_iam_role_policy" "task_policy" {
           aws_iam_role.task_role.arn
         ]
       },
-      # ECS (leitura)
+      # IAM PassRole (necessário para ECS assumir as roles)
+      {
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = [
+          aws_iam_role.execution_role.arn,
+          aws_iam_role.task_role.arn
+        ]
+      },
+      # ECS (leitura e escrita)
       {
         Effect = "Allow"
         Action = [
           "ecs:DescribeClusters",
           "ecs:ListClusters",
           "ecs:DescribeServices",
-          "ecs:ListServices"
+          "ecs:ListServices",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:UpdateService",
+          "ecs:CreateService",
+          "ecs:DeleteService"
         ]
         Resource = "*"
       },
@@ -256,7 +271,7 @@ resource "aws_iam_role_policy" "task_policy" {
   })
 }
 
-# Permissão adicional para ler segredos do Secrets Manager
+# Permissão adicional para a Execution Role ler segredos
 resource "aws_iam_role_policy" "execution_role_secrets_policy" {
   name = "atlantis-execution-secrets-policy"
   role = aws_iam_role.execution_role.id
