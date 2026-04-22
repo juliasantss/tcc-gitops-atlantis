@@ -78,7 +78,7 @@ resource "aws_security_group" "atlantis_sg" {
 
   tags = {
   Name = "atlantis-sg"
-  Test = "url-fix-validated"
+  Test = "validar PR"
 }
 }
 
