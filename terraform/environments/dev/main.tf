@@ -30,7 +30,7 @@ module "compute" {
   environment        = "dev"
   instance_type      = "t3.micro"
   vpc_id             = module.networking.vpc_id
-  private_subnet_ids = module.networking.private_subnet_ids
+  private_subnet_ids = module.networking.public_subnet_ids
   user_data          = <<-EOF
     #!/bin/bash
     yum update -y
