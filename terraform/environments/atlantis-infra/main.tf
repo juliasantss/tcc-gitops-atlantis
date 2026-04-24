@@ -160,7 +160,7 @@ resource "aws_iam_role" "task_role" {
   })
 }
 
-# Política da Task Role – COMPLETA
+# Política da Task Role – Completa
 resource "aws_iam_role_policy" "task_policy" {
   name = "atlantis-task-policy"
   role = aws_iam_role.task_role.id
