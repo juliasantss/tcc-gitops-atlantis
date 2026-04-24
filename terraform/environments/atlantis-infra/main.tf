@@ -160,38 +160,105 @@ resource "aws_iam_role" "task_role" {
   })
 }
 
+# Política da Task Role – COMPLETA
 resource "aws_iam_role_policy" "task_policy" {
   name = "atlantis-task-policy"
   role = aws_iam_role.task_role.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # S3 (state)
       {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:DeleteObject"
         ]
         Resource = [
           "arn:aws:s3:::tcc-tfstate-*",
           "arn:aws:s3:::tcc-tfstate-*/*"
         ]
       },
+      # DynamoDB (locking)
       {
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable"
         ]
         Resource = "arn:aws:dynamodb:*:*:table/terraform-locks"
       },
+      # Secrets Manager
       {
-        Effect   = "Allow"
-        Action   = "secretsmanager:GetSecretValue"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecrets",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecret"
+        ]
         Resource = aws_secretsmanager_secret.atlantis.arn
       },
+      # CloudWatch Logs – permissão total
+      {
+        Effect = "Allow"
+        Action = ["logs:*"]
+        Resource = "arn:aws:logs:us-east-1:775615219077:log-group:*"
+      },
+      # IAM Roles (leitura)
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:GetRole",
+          "iam:ListRoles",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies"
+        ]
+        Resource = [
+          aws_iam_role.execution_role.arn,
+          aws_iam_role.task_role.arn
+        ]
+      },
+      # IAM PassRole (necessário para ECS usar as roles)
+      {
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = [
+          aws_iam_role.execution_role.arn,
+          aws_iam_role.task_role.arn
+        ]
+      },
+      # IAM CreateServiceLinkedRole – necessário para Auto Scaling
+      {
+        Effect = "Allow"
+        Action = "iam:CreateServiceLinkedRole"
+        Resource = "arn:aws:iam::*:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+      },
+      # ECS (leitura e escrita)
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeClusters",
+          "ecs:ListClusters",
+          "ecs:DescribeServices",
+          "ecs:ListServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:UpdateService",
+          "ecs:CreateService",
+          "ecs:DeleteService"
+        ]
+        Resource = "*"
+      },
+      # Permissões para provisionar recursos (infraestrutura alvo)
       {
         Effect = "Allow"
         Action = [
@@ -206,7 +273,7 @@ resource "aws_iam_role_policy" "task_policy" {
   })
 }
 
-# Permissão adicional para ler segredos do Secrets Manager
+# Permissão adicional para a Execution Role ler segredos
 resource "aws_iam_role_policy" "execution_role_secrets_policy" {
   name = "atlantis-execution-secrets-policy"
   role = aws_iam_role.execution_role.id
@@ -217,9 +284,7 @@ resource "aws_iam_role_policy" "execution_role_secrets_policy" {
       {
         Effect = "Allow"
         Action = "secretsmanager:GetSecretValue"
-        Resource = [
-          aws_secretsmanager_secret.atlantis.arn
-        ]
+        Resource = [aws_secretsmanager_secret.atlantis.arn]
       }
     ]
   })
@@ -237,7 +302,7 @@ resource "aws_ecs_task_definition" "atlantis" {
 
   container_definitions = jsonencode([{
     name      = "atlantis"
-    image     = "ghcr.io/runatlantis/atlantis:latest"
+    image     = "ghcr.io/runatlantis/atlantis:v0.42.0"
     essential = true
     portMappings = [{
       containerPort = 4141
@@ -247,7 +312,11 @@ resource "aws_ecs_task_definition" "atlantis" {
       { name = "ATLANTIS_GH_USER", value = var.github_user },
       { name = "ATLANTIS_GH_WEBHOOK_SECRET", value = var.github_webhook_secret },
       { name = "ATLANTIS_REPO_ALLOWLIST", value = "github.com/${var.github_user}/tcc-gitops-atlantis" },
-      { name = "ATLANTIS_LOG_LEVEL", value = "debug" }
+      { name = "ATLANTIS_LOG_LEVEL", value = "debug" },
+      { name = "ATLANTIS_URL", value = "http://${aws_lb.atlantis.dns_name}" },
+      { name = "TF_VAR_github_user", value = var.github_user },
+      { name = "TF_VAR_github_token", value = var.github_token },
+      { name = "ATLANTIS_TERRAFORM_VERSION", value = "1.11.4" }
     ]
     secrets = [
       { name = "ATLANTIS_GH_TOKEN", valueFrom = "${aws_secretsmanager_secret.atlantis.arn}:token::" }
@@ -289,7 +358,8 @@ resource "aws_ecs_service" "atlantis" {
 # 5. SEGREDOS NO SECRETS MANAGER
 # ============================================
 resource "aws_secretsmanager_secret" "atlantis" {
-  name = "atlantis-secrets"
+  name                    = "atlantis-secrets"
+  recovery_window_in_days = 0   # Exclusão imediata no destroy
 }
 
 resource "aws_secretsmanager_secret_version" "atlantis" {
