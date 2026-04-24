@@ -1,4 +1,4 @@
-# main.tf - Ambiente Dev (aplicação de exemplo)
+# main.tf - Ambiente Dev
 
 terraform {
   required_version = ">= 1.6.0"
