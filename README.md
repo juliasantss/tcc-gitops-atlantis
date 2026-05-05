@@ -433,17 +433,6 @@ terraform destroy -auto-approve
 
 ---
 
-## 🔭 Comparativo de Ferramentas
-
-| Ferramenta | Hospedagem | Aderência GitOps | Diferencial |
-|---|---|:---:|---|
-| **Atlantis** ← *este projeto* | Self-hosted | ⭐⭐⭐⭐⭐ | Máximo controle; PR-driven nativo; open-source. |
-| **Terraform Cloud** | SaaS gerenciado | ⭐⭐⭐⭐ | Drift detection nativo; políticas Sentinel integradas. |
-| **Spacelift** | Enterprise SaaS | ⭐⭐⭐⭐ | Governança avançada; RBAC granular; OPA policies. |
-| **Digger** | Runner no CI | ⭐⭐⭐ | Simplicidade; executa dentro do próprio GitHub Actions. |
-| **env0** | SaaS gerenciado | ⭐⭐⭐ | Templates de ambiente e políticas de custo integradas. |
-
----
 
 ## 📄 Referências
 
