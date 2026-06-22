@@ -23,7 +23,7 @@ data "aws_ami" "amazon_linux_2023" {
 resource "aws_launch_template" "app" {
   name_prefix   = "app-lt-${var.environment}-"
   image_id      = data.aws_ami.amazon_linux_2023.id
-  instance_type = "t3.xlarge"
+  instance_type = var.instance_type
   user_data     = base64encode(var.user_data)
 
   vpc_security_group_ids = [aws_security_group.app.id]
@@ -71,13 +71,6 @@ resource "aws_security_group" "app" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  ingress {
-  from_port   = 22
-  to_port     = 22
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]   # Vulnerabilidade proposital
-}
 
   egress {
     from_port   = 0
